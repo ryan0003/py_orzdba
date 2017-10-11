@@ -298,7 +298,7 @@ def get_mysqlstat(con,myType):
                 output += "\33[37m"
 
             if (innodb_data_read_diff/1024/1024) > 1:
-                output += "{0:^8,.1f}".format(str(innodb_data_read_diff/1024/1024)+'m')
+                output += "{0:^8}".format(str(innodb_data_read_diff/1024/1024)+'m')
             elif (innodb_data_read_diff/1024) > 1 :
                 output += "{0:^8}".format(str((innodb_data_read_diff/1024)+0.5)+'k')
             else:
@@ -310,7 +310,7 @@ def get_mysqlstat(con,myType):
                 output += "\33[37m"
 
             if (innodb_data_written_diff/1024/1024) > 1:
-                output += "{0:^8,.1f}|".format(str(innodb_data_written_diff/1024/1024)+'m')
+                output += "{0:^8}|".format(str(innodb_data_written_diff/1024/1024)+'m')
             elif (innodb_data_written_diff/1024) > 1 :
                 output += "{0:^8}|".format(str((innodb_data_written_diff/1024)+0.5)+'k')
             else:
