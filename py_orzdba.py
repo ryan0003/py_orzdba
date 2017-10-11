@@ -1,7 +1,8 @@
-﻿#!/usr/bin/env python
+#!/usr/bin/env python
 # -*- coding: UTF-8 -*-
-#已orzdba为模版重写，计算方式均根据orzdba
-import MySQLdb as mdb
+#以orzdba为模版重写，计算方式均根据orzdba
+
+import pymysql as mdb
 import sys
 import argparse
 import datetime
@@ -16,24 +17,24 @@ mycount = 0
 not_first = 0
 interval = 1
 #myType = ['com','innodb_hit','innodb_rows','innodb_pages','innodb_data','innodb_log','innodb_status','threads','bytes']
-mystat1 = {'Com_select':0, \
-           'Com_delete':0 ,\
-           'Com_update':0 ,\
-           'Com_insert': 0,\
-           'Innodb_buffer_pool_read_requests': 0,\
-           'Innodb_rows_inserted': 0 ,\
-           'Innodb_rows_updated': 0 ,\
-           'Innodb_rows_deleted': 0 ,\
-           'Innodb_rows_read': 0,\
-           'Threads_created': 0,\
-           'Bytes_received': 0,\
-           'Bytes_sent':0,\
-           'Innodb_buffer_pool_pages_flushed': 0,\
-           'Innodb_data_read':0,\
-           'Innodb_data_reads': 0,\
-           'Innodb_data_writes': 0,\
-           'Innodb_data_written': 0,\
-           'Innodb_os_log_fsyncs': 0,\
+mystat1 = {'Com_select':0,
+           'Com_delete':0 ,
+           'Com_update':0 ,
+           'Com_insert': 0,
+           'Innodb_buffer_pool_read_requests': 0,
+           'Innodb_rows_inserted': 0 ,
+           'Innodb_rows_updated': 0 ,
+           'Innodb_rows_deleted': 0 ,
+           'Innodb_rows_read': 0,
+           'Threads_created': 0,
+           'Bytes_received': 0,
+           'Bytes_sent':0,
+           'Innodb_buffer_pool_pages_flushed': 0,
+           'Innodb_data_read':0,
+           'Innodb_data_reads': 0,
+           'Innodb_data_writes': 0,
+           'Innodb_data_written': 0,
+           'Innodb_os_log_fsyncs': 0,
            'Innodb_os_log_written': 0}
 
 def dealWithData1(res):
@@ -54,12 +55,12 @@ def dealWithData2(res):
 
 def print_title(con):
     LOG_OUT = '''
-.=================================================.
-|       Welcome to use the orzdba tool !          |
-|  因需要监控的机器太旧，安装perl十分麻烦，故用重新  |
-|  python重新了orzdba,参数的计算方式均来自orzdba    |
-|          Yep...Chinese English~                 |
-'=========== Date : %s ==========='
+                                            .=================================================.
+                                            |       Welcome to use the orzdba tool !           |
+                                            |          Yep...Chinese English~                  |
+                                            |       源码来自orzdba为了不装prel用python从写      |
+                                            |       如有冒犯请联系 Email:jackey0003@hotmail.com |
+                                            '===========  Date : %s  ==========='
             '''  % time.strftime("%Y-%m-%d %H:%M:%S",time.localtime(time.time()))
     print LOG_OUT
     cursor = con.cursor()
@@ -88,7 +89,7 @@ def print_title(con):
             r = val[1]
         rel = "%s:[%s]" % (val[0],r)
         outputs.append("%s" % rel)
-    outputs =  ','.join(outputs)
+    outputs = ','.join(outputs)
     print outputs
     return
 
@@ -96,39 +97,39 @@ def get_options(myType):
     global mysql_headline1
     global mysql_headline2
     if 'com' in myType:
-        mysql_headline1 +="         -QPS- -TPS-           "
-        mysql_headline2 +="  ins   upd   del    sel   iud|"
+        mysql_headline1 +="|             -QPS- -TPS-                "
+        mysql_headline2 +="|{0:^8}{1:^8}{2:^8}{3:^8}{4:^8}|".format('ins','upd','del','sel','iud')
     if 'innodb_hit' in myType:
-        mysql_headline1 += "         -Hit%- "
-        mysql_headline2 += "     lor    hit|"
+        mysql_headline1 += "|     -Hit%-     "
+        mysql_headline2 += "{0:^8}{1:^8}|".format('lor','hit')
 
     if 'innodb_rows' in myType:
-        mysql_headline1 += "---innodb rows status--- "
-        mysql_headline2 += "  ins   upd   del   read|"
+        mysql_headline1 += "|      -innodb rows status-      "
+        mysql_headline2 += "{0:^8}{1:^8}{2:^8}{3:^8}|".format('ins', 'upd','del','read')
 
     if 'innodb_pages' in myType:
-        mysql_headline1 += "---innodb bp pages status-- "
-        mysql_headline2 += "   data   free  dirty flush|"
+        mysql_headline1 += "|    -innodb bp pages status-    "
+        mysql_headline2 += "{0:^8}{1:^8}{2:^8}{3:^8}|".format('data','free','dirty','flush')
 
     if 'innodb_data' in myType:
-        mysql_headline1 += "-----innodb data status---- "
-        mysql_headline2 += "   reads writes  read written|"
+        mysql_headline1 += "|       -innodb data status-     "
+        mysql_headline2 += "{0:^8}{1:^8}{2:^8}{3:^8}|".format('reads', 'writes', 'readed', 'written')
 
     if 'innodb_log' in myType:
-        mysql_headline1 += "--innodb log-- "
-        mysql_headline2 += "fsyncs written|"
+        mysql_headline1 += "| --innodb log-- "
+        mysql_headline2 += "{0:^8}{1:^8}|".format('fsyncs', 'written')
 
     if 'innodb_status' in myType:
-        mysql_headline1 += "  his --log(byte)--  read ---query--- "
-        mysql_headline2 += " list uflush  uckpt  view inside  que|"
+        mysql_headline1 += "|         his --log(byte)--  read --query--      "
+        mysql_headline2 += "{0:^8}{1:^8}{2:^8}{3:^8}{4:^8}{5:^8}|".format('list', 'uflush', 'uckpt','view','inside', 'que')
 
     if 'threads' in myType:
-        mysql_headline1 += "------threads------ "
-        mysql_headline2 += " run  con  cre  cac|"
+        mysql_headline1 += "|           --threads--          "
+        mysql_headline2 += "{0:^8}{1:^8}{2:^8}{3:^8}|".format('run','con','cre','cac')
 
     if 'bytes' in myType:
-        mysql_headline1 += "-----bytes---- "
-        mysql_headline2 += "   recv   send|"
+        mysql_headline1 += "|    --bytes--   |"
+        mysql_headline2 += "{0:^8}{1:^8}|".format('recv','send')
 
 def get_innodb_status(con):
     sql = 'show engine innodb status'
@@ -184,9 +185,11 @@ def get_innodb_status(con):
                 #print i
                 r = re.compile("\s+")
                 rel = r.split(i)
+                #print rel
                 innodb_status['read_views'] = rel[0]
         except Exception,e:
             pass
+
     innodb_status["unflushed_log"] = int(innodb_status['log_bytes_written']) - int(innodb_status['log_bytes_flushed'])
     innodb_status["uncheckpointed_bytes"] = int(innodb_status['log_bytes_written']) - int(innodb_status['last_checkpoint'])
     return innodb_status
@@ -195,7 +198,7 @@ def get_mysqlstat(con,myType):
     global not_first
     global mystat1
     global interval
-    sql = 'show global status where Variable_name in ("Com_select","Com_insert","Com_update","Com_delete","Innodb_buffer_pool_read_requests","Innodb_buffer_pool_reads","Innodb_rows_inserted","Innodb_rows_updated","Innodb_rows_deleted","Innodb_rows_read","Threads_running","Threads_connected","Threads_cached","Threads_created","Bytes_received","Bytes_sent","Innodb_buffer_pool_pages_data","Innodb_buffer_pool_pages_free","Innodb_buffer_pool_pages_dirty","Innodb_buffer_pool_pages_flushed","Innodb_data_reads","In...(line truncated)...
+    sql = 'show global status where Variable_name in ("Com_select","Com_insert","Com_update","Com_delete","Innodb_buffer_pool_read_requests","Innodb_buffer_pool_reads","Innodb_rows_inserted","Innodb_rows_updated","Innodb_rows_deleted","Innodb_rows_read","Threads_running","Threads_connected","Threads_cached","Threads_created","Bytes_received","Bytes_sent","Innodb_buffer_pool_pages_data","Innodb_buffer_pool_pages_free","Innodb_buffer_pool_pages_dirty","Innodb_buffer_pool_pages_flushed","Innodb_data_reads","Innodb_data_writes","Innodb_data_read","Innodb_data_written","Innodb_os_log_fsyncs","Innodb_os_log_written")'
     cursor = con.cursor()
     cursor.execute(sql)
     res = cursor.fetchall()
@@ -204,32 +207,30 @@ def get_mysqlstat(con,myType):
     output = ''
     if not_first == 0:
         if 'com' in myType:
-            output += "%4d %5d %5d %6d %5d" % (0,0,0,0,0)
+            output += " {0:^8}{1:^8}{2:^8}{3:^8}{4:^8}|".format(0, 0, 0, 0, 0)
         if 'innodb_hit' in myType:
-            output += "%8d %8.2f" % (0,100)
+            output += "{0:^8}{1:^8,.2f}|".format(0,100)
 
         if 'innodb_rows' in myType:
-            output += "%6d %5d %5d %6d" % (0,0,0,0)
+            output += "{0:^8}{1:^8}{2:^8}{3:^8}|" .format(0,0,0,0)
 
         if 'innodb_pages' in myType:
-            output += "%7d %6d %6d %5d" % (0,0,0,0)
+            output += "{0:^8}{1:^8}{2:^8}{3:^8}|".format(0,0,0,0)
 
         if 'innodb_data' in myType:
-            output += "%8d %6d %6d %6d" % (0,0,0,0)
+            output += "{0:^8}{1:^8}{2:^8}{3:^8}|".format(0,0,0,0)
 
         if 'innodb_log' in myType:
-            output += "%6d %7d" % (0,0)
+            output += "{0:^8}{1:^8}|".format(0,0)
 
         if 'innodb_status' in myType:
-            output += "%8d %6d %6d %5d %5d %5d"% (0,0,0,0,0,0)
+            output += "{0:^8}{1:^8}{2:^8}{3:^8}{4:^8}{5:^8}|".format(0,0,0,0,0,0)
 
         if 'threads' in myType:
-            output += "%5d %4d %4d %4d"%(0,0,0,0)
+            output += "{0:^8}{1:^8}{2:^8}{3:^8}|".format(0,0,0,0)
 
         if 'bytes' in myType:
-            output += "%7d %7d" % (0,0)
-        not_first += 1
-        mystat1 = mystat2
+            output += "{0:^8}{1:^8}".format(0,0)
     else:
         insert_diff = (int(mystat2['Com_insert']) - int(mystat1['Com_insert'])) / interval
         update_diff = (int(mystat2['Com_update']) - int(mystat1['Com_update'])) / interval
@@ -254,53 +255,54 @@ def get_mysqlstat(con,myType):
 
         if 'com' in myType:
            output += "\33[37m"
-           output += "%4d %5d %5d" % (insert_diff,update_diff,delete_diff)
+           output += " {0:^8}{1:^8}{2:^8}".format(insert_diff,update_diff,delete_diff)
            output += "\33[33m"
-           output += "%7d %5d" % (select_diff,insert_diff+update_diff+delete_diff)
+           output += "{0:^8}{1:^8}|".format(select_diff,insert_diff+update_diff+delete_diff)
            output += "\33[0m"
 
         if 'innodb_hit' in myType:
             output += "\33[37m"
-            output += " %7d" %  read_request
+            output += "{0:^8}".format(read_request)
             if read_request:
                 hit = (read_request-read)/read_request*100
                 if hit > 99:
                     output += "\33[32m"
                 else:
                     output += "\33[31m"
-                output += "%8.2f" % hit
+                output += "{0:^8,.2f}|".format(hit)
             else:
                 hit = 100.00
                 output += "\33[32m"
-                output += " %8.2f" % hit
+                output += "{0:^8,.2f}|".format(hit)
             output += "\33[0m"
 
         if 'innodb_rows' in myType:
             output += "\33[37m"
-            output += "%6d %5d %5d %6d" % (innodb_rows_inserted_diff,innodb_rows_updated_diff,innodb_rows_deleted_diff,innodb_rows_read_diff)
+            output += "{0:^8}{1:^8}{2:^8}{3:^8}|".format(innodb_rows_inserted_diff,innodb_rows_updated_diff,innodb_rows_deleted_diff,innodb_rows_read_diff)
             output += "\33[0m"
 
         if 'innodb_pages' in myType:
             output += "\33[37m"
-            output += "%7s %6s %6s %5d" % (mystat2['Innodb_buffer_pool_pages_data'],mystat2['Innodb_buffer_pool_pages_free'],mystat2['Innodb_buffer_pool_pages_dirty'],innodb_bp_pages_flushed_diff)
+
+            output += "{0:^8}{1:^8}".format(mystat2['Innodb_buffer_pool_pages_data'],mystat2['Innodb_buffer_pool_pages_free'])
+            output += "\33[33m"
+            output += "{0:^8}{1:^8}|".format(mystat2['Innodb_buffer_pool_pages_dirty'],innodb_bp_pages_flushed_diff)
             output += "\33[0m"
 
         if 'innodb_data' in myType:
-            innodb_data_read_diff_ = 0
-            innodb_data_written_diff_ = 0
             output += "\33[37m"
-            output += "%8d %6d" % (innodb_data_reads_diff,innodb_data_writes_diff)
+            output += "{0:^8}{1:^8}".format(innodb_data_reads_diff,innodb_data_writes_diff)
             if (innodb_data_read_diff/1024/1024) > 9:
                 output += "\33[31m"
             else:
                 output += "\33[37m"
 
             if (innodb_data_read_diff/1024/1024) > 1:
-                output += "%6.1fm" % (innodb_data_read_diff/1024/1024)
+                output += "{0:^8,.1f}".format(str(innodb_data_read_diff/1024/1024)+'m')
             elif (innodb_data_read_diff/1024) > 1 :
-                output += "%7s" % (str((innodb_data_read_diff/1024)+0.5)+'k')
+                output += "{0:^8}".format(str((innodb_data_read_diff/1024)+0.5)+'k')
             else:
-                output += "%7s" % str(innodb_data_read_diff)
+                output += "{0:^8}".format(str(innodb_data_read_diff))
 
             if (innodb_data_written_diff/1024/1024) > 9:
                 output += "\33[31m"
@@ -308,16 +310,16 @@ def get_mysqlstat(con,myType):
                 output += "\33[37m"
 
             if (innodb_data_written_diff/1024/1024) > 1:
-                output += "%6.1fm" % (innodb_data_written_diff/1024/1024)
+                output += "{0:^8,.1f}|".format(str(innodb_data_written_diff/1024/1024)+'m')
             elif (innodb_data_written_diff/1024) > 1 :
-                output += "%7s" % (str((innodb_data_written_diff/1024)+0.5)+'k')
+                output += "{0:^8}|".format(str((innodb_data_written_diff/1024)+0.5)+'k')
             else:
-                output += "%7s" % str(innodb_data_written_diff)
+                output += "{0:^8}|".format(str(innodb_data_written_diff))
             output += "\33[0m"
 
         if 'innodb_log' in myType:
             output += "\33[37m"
-            output += "%6d" % innodb_os_log_fsyncs_diff
+            output += "{0:^8}".format(innodb_os_log_fsyncs_diff)
 
             if (innodb_os_log_written_diff/1024/1024) > 1:
                 output += "\33[31m"
@@ -325,67 +327,69 @@ def get_mysqlstat(con,myType):
                 output += "\33[33m"
 
             if (innodb_os_log_written_diff/1024/1024) > 1:
-                output += "%8.1fm" % (innodb_os_log_written_diff/1024/1024)
+                output += "{0:^8}|".format(str(innodb_os_log_written_diff/1024/1024)+'m')
             elif (innodb_data_written_diff/1024) > 1 :
-                output += "%7s" % (str((innodb_os_log_written_diff/1024)+0.5)+'k')
+                output += "{0:^8}|".format(str((innodb_os_log_written_diff/1024)+0.5)+'k')
             else:
-                output += "%8s" % str(innodb_os_log_written_diff)
+                output += "{0:^8}|".format(str(innodb_os_log_written_diff))
             output += "\33[0m"
 
         if 'innodb_status' in  myType:
             innodb_status = get_innodb_status(con)
             output += "\33[37m"
             innodb_status['history_list'] = innodb_status['history_list']
-            output += "%8s " % innodb_status['history_list']
+            output += "{0:^8}" .format(innodb_status['history_list'])
             output += "\33[33m"
             if (int(innodb_status['unflushed_log'])/1024/1024) > 1:
                 innodb_status['unflushed_log'] = int(innodb_status['unflushed_log'])/1024/1024
-                output += "%5.1fm" % (innodb_status['unflushed_log'])
+                output += "{0:^8}".format(str(innodb_status['unflushed_log'])+'m')
             elif (int(innodb_status["unflushed_log"])/1024) > 1:
-                innodb_status['unflushed_log'] =  int(innodb_status['unflushed_log'])/1024 + 0.5
-                output += "%6fk" % innodb_status['unflushed_log']
+                innodb_status['unflushed_log'] = str(int(innodb_status['unflushed_log'])/1024 + 0.5)
+                output += "{0:^8}".format(str(innodb_status['unflushed_log'])+'k')
             else:
-                 output += "%6s" % innodb_status['unflushed_log']
+                 output += "{0:^8}".format(innodb_status['unflushed_log'])
 
             if (int(innodb_status['uncheckpointed_bytes'])/1024/1024) > 1:
                 innodb_status['uncheckpointed_bytes'] = int(innodb_status['uncheckpointed_bytes'])/1024/1024
-                output += "%6.1fm" % innodb_status['uncheckpointed_bytes']
+                output += "{0:^8,.1f}m".format(innodb_status['uncheckpointed_bytes'])
             elif (int(innodb_status['uncheckpointed_bytes'])/1024) > 1:
                 innodb_status['uncheckpointed_bytes'] = int(innodb_status['uncheckpointed_bytes'])/1024 + 0.5
-                output += "%7fk" % innodb_status['uncheckpointed_bytes']
+                output += "{0:^8,.1f}k".format(innodb_status['uncheckpointed_bytes'])
             else:
                 innodb_status['uncheckpointed_bytes'] = str(innodb_status['uncheckpointed_bytes'])
-                output += "%7s" % innodb_status['uncheckpointed_bytes']
-            output += "%6s %5s %5s" %  (innodb_status['read_views'],innodb_status['queries_inside'],innodb_status['queries_queued'])
+                output += "{0:^8}".format(innodb_status['uncheckpointed_bytes'])
+            output += "{0:^8}{1:^8}{2:^8}|".format(innodb_status['read_views'],innodb_status['queries_inside'],innodb_status['queries_queued'])
 	    output += "\33[0m"
 
         if 'threads' in  myType :
             output += "\33[37m"
-            output += "%5s %4s %4d %4s" % (mystat2['Threads_running'],mystat2['Threads_connected'],threads_created_diff,mystat2['Threads_cached'])
+            output += "{0:^8}{1:^8}{2:^8}{3:^8}|".format(mystat2['Threads_running'],mystat2['Threads_connected'],threads_created_diff,mystat2['Threads_cached'])
   	    output += "\33[0m"	   
 
         if 'bytes' in myType:
             output += "\33[37m"
             if (bytes_received_diff/1024/1024) > 1:
-                output += "%7.1f m" % (bytes_received_diff/1024/1024)
+                output += "{0:^8}".format(str(bytes_received_diff/1024/1024)+'m')
             elif (bytes_received_diff/1024) > 1:
-                output += "%8s k" % str(bytes_received_diff/1024 + 0.5)
+                output += "{0:^8}".format(str(bytes_received_diff/1024 + 0.5)+'k')
             else:
-                output += "%8s" % str(bytes_received_diff)
+                output += "{0:^8}".format(str(bytes_received_diff))
 
             if (bytes_sent_diff/1024/1024) > 1:
-                output += "%7.1f m" % (bytes_sent_diff/1024/1024)
+                output += "{0:^8}".format(str(bytes_sent_diff/1024/1024)+'m')
             elif (bytes_sent_diff/1024) > 1:
-                output += "%8s k" % str(bytes_sent_diff/1024 + 0.5)
+                output += "{0:^8}".format(str(bytes_sent_diff/1024 + 0.5)+'k')
             else:
-                output += "%7s" % str(bytes_sent_diff)
+                output += "{0:^8}".format(str(bytes_sent_diff))
             output += "\33[0m"
+    not_first += 1
+    mystat1 = mystat2
     print output
     return
 
 
 if __name__ == "__main__":
-   
+    '''
     parser = argparse.ArgumentParser(description='数据库监控脚本')
     parser.add_argument('host',help='数据库实例IP',default='localhost')
     parser.add_argument('user',action="store",help='用户')
@@ -398,21 +402,30 @@ if __name__ == "__main__":
     myPasswd = args.password
     myPort = args.port
     myType = args.type
-    
+    '''
+    myHost = ''
+    myUser = ''
+    myPasswd = ''
+    myPort = 3306
+    myType = ['com', 'innodb_hit', 'innodb_rows', 'innodb_pages', 'innodb_data', 'innodb_log', 'innodb_status', 'threads', 'bytes']
+    #myType = ['com', 'innodb_hit', 'innodb_rows', 'innodb_pages',  'innodb_log',
+    #         'threads', 'bytes']
+    con = mdb.connect(host=myHost, user=myUser, passwd=myPasswd, port=myPort, charset='utf8')
     try:
-        con = mdb.connect(host=myHost,user=myUser,passwd=myPasswd,port=myPort,charset='utf8')
         print_title(con)
         get_options(myType)
         while 1:
-            if mycount%15 == 0 :
+            if mycount%10 == 0 :
                 print mysql_headline1
                 print mysql_headline2
             mycount += 1
-            time.sleep(1)
+            time.sleep(2)
             get_mysqlstat(con,myType)
-        con.close()
     except Exception,e:
         print e
+    finally:
+        con.close()
+
 
 
 
